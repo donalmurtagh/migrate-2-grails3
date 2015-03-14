@@ -59,7 +59,7 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
     // copy the unit and integration tests
     def sourceTestsBase = grailsSettings.testSourceDir
     FileUtils.copyDirectory(makeFile(sourceTestsBase, 'unit'), makeFile(targetDir, ['src', 'test', 'groovy']))
-    FileUtils.copyDirectory(makeFile(sourceTestsBase, 'unit'), makeFile(targetDir, ['src', 'integration-test', 'groovy']))
+    FileUtils.copyDirectory(makeFile(sourceTestsBase, 'integration'), makeFile(targetDir, ['src', 'integration-test', 'groovy']))
 }
 
 def createDirectoryIfNotExists(File dir) {
