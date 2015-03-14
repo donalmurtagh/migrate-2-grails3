@@ -49,18 +49,45 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
     // Copy java source - in 3.0.0.RC1 the java dir isn't created by create-app, so we need to make it ourselves.
     // Check for it's existence in case this changes between now and the 3.X final release
     File targetJavaSrcDir = makeFile(targetDir, ['src', 'main', 'java'])
-    if (!targetJavaSrcDir.directory) {
-        assert targetJavaSrcDir.mkdir()
-    }
+    createDirectoryIfNotExists(targetJavaSrcDir)
 
     copyDir(grailsSettings.sourceDir, 'java', targetSrcDir)
+
+    // copy contents of grails-app
+    copyDir(baseDir, 'grails-app', targetDir, 'grails-app')
+
+    // copy the unit and integration tests
+    def sourceTestsBase = grailsSettings.testSourceDir
+    FileUtils.copyDirectory(makeFile(sourceTestsBase, 'unit'), makeFile(targetDir, ['src', 'test', 'groovy']))
+    FileUtils.copyDirectory(makeFile(sourceTestsBase, 'unit'), makeFile(targetDir, ['src', 'integration-test', 'groovy']))
 }
 
+def createDirectoryIfNotExists(File dir) {
+    if (!dir.directory) {
+        assert dir.mkdir()
+    }
+}
+
+/**
+ * Copies the contents of one directory to another
+ * @param srcBase File/String indicating the base source dir
+ * @param srcRelative relative path from srcBase to the source dir
+ * @param targetBase File/String indicating the base source dir
+ * @param targetRelative relative path from targetBase to the target dir. If targetBase is the
+ * target dir, this may be omitted
+ * @return
+ */
 def copyDir(srcBase, srcRelative, targetBase, targetRelative = StringUtils.EMPTY) {
     def src = makeFile(srcBase, srcRelative)
-    def target = makeFile(targetBase, targetRelative)
-    GrailsConsole.getInstance().info "Copying files from $src to $target"
-    FileUtils.copyDirectoryToDirectory(src, target)
+    def console = GrailsConsole.instance
+
+    if (src.directory) {
+        def target = makeFile(targetBase, targetRelative)
+        console.info "Copying files from $src to $target"
+        FileUtils.copyDirectoryToDirectory(src, target)
+    } else {
+        console.warn "Directory $src not found in Grails 2 project - skipping"
+    }
 }
 
 /**
