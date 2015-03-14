@@ -55,14 +55,17 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
 
     copyDir(copier, grailsSettings.sourceDir, 'java', targetSrcDir)
 
-    // copy contents of grails-app
+    // copy grails-app
     copyDir(copier, baseDir, 'grails-app', targetDir, 'grails-app')
 
-    copier = { File src, File target -> FileUtils.copyDirectory(src, target)}
     // copy the unit and integration tests
     def sourceTestsBase = grailsSettings.testSourceDir
+    copier = { File src, File target -> FileUtils.copyDirectory(src, target)}
     copyDir(copier, sourceTestsBase, 'unit', targetDir, ['src', 'test', 'groovy'])
     copyDir(copier, sourceTestsBase, 'integration', targetDir, ['src', 'integration-test', 'groovy'])
+
+    // copy web-app
+    copyDir(copier, baseDir, 'web-app', targetDir, ['src', 'main', 'webapp'])
 }
 
 def createDirectoryIfNotExists(File dir) {
