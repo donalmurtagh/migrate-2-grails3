@@ -34,7 +34,6 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
         console.info "Source application name ${Metadata.current['app.name']}"
     }
 
-    String pathSeparator = System.getProperty('file.separator')
     File targetDir = makeFile(baseDir, pathToTargetApp)
 
     if (!targetDir.directory) {
@@ -42,12 +41,26 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
         return
     }
 
-    // copy groovy source
-    File groovySrcDir = makeFile(grailsSettings.sourceDir, 'groovy')
-    File groovyTargetDir = makeFile(targetDir, ['src', 'main', 'groovy'])
+    def targetSrcDir = makeFile(targetDir, ['src', 'main'])
 
-    console.info "Copying files from $groovySrcDir to $groovyTargetDir"
-    FileUtils.copyDirectoryToDirectory(groovySrcDir, groovyTargetDir)
+    // Copy groovy source
+    copyDir(grailsSettings.sourceDir, 'groovy', targetSrcDir)
+
+    // Copy java source - in 3.0.0.RC1 the java dir isn't created by create-app, so we need to make it ourselves.
+    // Check for it's existence in case this changes between now and the 3.X final release
+    File targetJavaSrcDir = makeFile(targetDir, ['src', 'main', 'java'])
+    if (!targetJavaSrcDir.directory) {
+        assert targetJavaSrcDir.mkdir()
+    }
+
+    copyDir(grailsSettings.sourceDir, 'java', targetSrcDir)
+}
+
+def copyDir(srcBase, srcRelative, targetBase, targetRelative = StringUtils.EMPTY) {
+    def src = makeFile(srcBase, srcRelative)
+    def target = makeFile(targetBase, targetRelative)
+    GrailsConsole.getInstance().info "Copying files from $src to $target"
+    FileUtils.copyDirectoryToDirectory(src, target)
 }
 
 /**
@@ -65,13 +78,6 @@ File makeFile(base, relative) {
     }
     String relativePath = [base.toString(), relative].join(pathSeparator)
     new File(relativePath).canonicalFile
-}
-
-Properties getApplicationProperties(grailsSettings) {
-    File propertiesFile = new File("$grailsSettings.baseDir/application.properties")
-    Properties applicationProperties = new Properties()
-    applicationProperties.load(propertiesFile.newInputStream())
-    applicationProperties
 }
 
 setDefaultTarget(migrate)
