@@ -43,23 +43,26 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
 
     def targetSrcDir = makeFile(targetDir, ['src', 'main'])
 
+    Closure copier = { File src, File target -> FileUtils.copyDirectoryToDirectory(src, target)}
+
     // Copy groovy source
-    copyDirSameName(grailsSettings.sourceDir, 'groovy', targetSrcDir)
+    copyDir(copier, grailsSettings.sourceDir, 'groovy', targetSrcDir)
 
     // Copy java source - in 3.0.0.RC1 the java dir isn't created by create-app, so we need to make it ourselves.
     // Check for it's existence in case this changes between now and the 3.X final release
     File targetJavaSrcDir = makeFile(targetDir, ['src', 'main', 'java'])
     createDirectoryIfNotExists(targetJavaSrcDir)
 
-    copyDirSameName(grailsSettings.sourceDir, 'java', targetSrcDir)
+    copyDir(copier, grailsSettings.sourceDir, 'java', targetSrcDir)
 
     // copy contents of grails-app
-    copyDirSameName(baseDir, 'grails-app', targetDir, 'grails-app')
+    copyDir(copier, baseDir, 'grails-app', targetDir, 'grails-app')
 
+    copier = { File src, File target -> FileUtils.copyDirectory(src, target)}
     // copy the unit and integration tests
     def sourceTestsBase = grailsSettings.testSourceDir
-    copyDir(sourceTestsBase, 'unit', targetDir, ['src', 'test', 'groovy'])
-    copyDir(sourceTestsBase, 'integration', targetDir, ['src', 'integration-test', 'groovy'])
+    copyDir(copier, sourceTestsBase, 'unit', targetDir, ['src', 'test', 'groovy'])
+    copyDir(copier, sourceTestsBase, 'integration', targetDir, ['src', 'integration-test', 'groovy'])
 }
 
 def createDirectoryIfNotExists(File dir) {
@@ -70,27 +73,7 @@ def createDirectoryIfNotExists(File dir) {
 
 /**
  * Copies the contents of one directory to another
- * @param srcBase File/String indicating the base source dir
- * @param srcRelative relative path from srcBase to the source dir
- * @param targetBase File/String indicating the base source dir
- * @param targetRelative relative path from targetBase to the target dir.
- * @return
- */
-def copyDir(srcBase, srcRelative, targetBase, targetRelative) {
-    def src = makeFile(srcBase, srcRelative)
-    def console = GrailsConsole.instance
-
-    if (src.directory) {
-        def target = makeFile(targetBase, targetRelative)
-        console.info "Copying files from $src to $target"
-        FileUtils.copyDirectory(src, target)
-    } else {
-        console.warn "Directory $src not found in Grails 2 project - skipping"
-    }
-}
-
-/**
- * Copies the contents of one directory to another directory with the same name
+ * @param copier performs the copying
  * @param srcBase File/String indicating the base source dir
  * @param srcRelative relative path from srcBase to the source dir
  * @param targetBase File/String indicating the base source dir
@@ -98,14 +81,14 @@ def copyDir(srcBase, srcRelative, targetBase, targetRelative) {
  * target dir, this may be omitted
  * @return
  */
-def copyDirSameName(srcBase, srcRelative, targetBase, targetRelative = StringUtils.EMPTY) {
+def copyDir(Closure copier, srcBase, srcRelative, targetBase, targetRelative = StringUtils.EMPTY) {
     def src = makeFile(srcBase, srcRelative)
     def console = GrailsConsole.instance
 
     if (src.directory) {
         def target = makeFile(targetBase, targetRelative)
         console.info "Copying files from $src to $target"
-        FileUtils.copyDirectoryToDirectory(src, target)
+        copier(src, target)
     } else {
         console.warn "Directory $src not found in Grails 2 project - skipping"
     }
