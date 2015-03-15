@@ -26,25 +26,21 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
 
     Closure copier = { File src, File target -> FileUtils.copyDirectoryToDirectory(src, target)}
 
-    // Copy groovy source
+    // copy groovy source
     copyDir(copier, grailsSettings.sourceDir, 'groovy', targetSrcDir)
-
-    // Copy java source - in 3.0.0.RC1 the java dir isn't created by create-app, so we need to make it ourselves.
-    // Check for it's existence in case this changes between now and the 3.X final release
-    File targetJavaSrcDir = makeFile(targetDir, ['src', 'main', 'java'])
-    createDirectoryIfNotExists(targetJavaSrcDir)
-
-    copyDir(copier, grailsSettings.sourceDir, 'java', targetSrcDir)
 
     // copy grails-app
     copyDir(copier, baseDir, 'grails-app', targetDir, 'grails-app')
 
-    // copy the unit and integration tests
     def sourceTestsBase = grailsSettings.testSourceDir
     copier = { File src, File target -> FileUtils.copyDirectory(src, target)}
+
+    // copy java source
+    copyDir(copier, grailsSettings.sourceDir, 'java', targetSrcDir, 'groovy')
+
+    // copy the tests
     copyDir(copier, sourceTestsBase, 'unit', targetDir, ['src', 'test', 'groovy'])
     copyDir(copier, sourceTestsBase, 'integration', targetDir, ['src', 'integration-test', 'groovy'])
-
     copyDir(copier, sourceTestsBase, 'functional', targetDir, ['src', 'integration-test', 'groovy'])
 
     // copy web-app and scripts
