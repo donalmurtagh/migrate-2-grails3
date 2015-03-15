@@ -1,13 +1,20 @@
 ## migrate-2-grails3
 A Grails 2 plugin that performs a partial migration of a Grails 2 plugin or application to Grails 3
 
-### Instructions
+### Usage
 
 - Create an empty Grails 3 application or plugin (depending on what you're migrating) 
-- Install this plugin in the application being migrated
-- On the command-line set the current directory to the root of the project being migrated and run the following command
+- Install this plugin in the Grails 2 project being migrated, i.e. add the following to `BuildConfig.groovy`
+replacing ${version} with the latest version of this plugin
 
-`grails migrate <path> <plugin package name>`
+    plugins {
+        build    ':migrate-2-grails3:${version}'
+        // other plugin dependencies
+    }
+
+- Ensure that the current Grails version matches that of the Grails 2 project and the following command therein
+
+`grails migrate [path to Grails 3 project] [plugin package name]`
     
 #### Arguments
 
@@ -18,24 +25,15 @@ will be used. `${appName}` is derived from the `app.name` property in `applicati
 
 ### Automatic Migration Tasks
 
-The plugin automatically performs the following tasks:
-
-- copying Java/Groovy source files to the Grails 3 project
-- copying unit/integration tests to the Grails 3 project
-- copying the contents of `grails-app` and `web-app` to the Grails 3 project
+The plugin performs the tasks listed in the "Project Structure Changes" section of the [migration guide](https://grails.github.io/grails-doc/latest/guide/upgrading.html).
+After following the instructions above, if the project being migrated is a plugin, steps 1-3 of the [Upgrading Plugins](https://grails.github.io/grails-doc/latest/guide/upgrading.html#upgradingPlugins)
+section will also have been performed. if the project being migrated is an application, steps 1-2 of the 
+[Upgrading Applications](https://grails.github.io/grails-doc/latest/guide/upgrading.html#upgradingApps) section will have been performed.
  
-### Manual Migration Tasks
+#### Exceptions
+ 
+Some of the steps described in the aforementioned sections of the migration guide are not performed by this plugin. These are:
 
-There are a number of tasks involved in migrating to Grails 3 that the plugin does *not* perform, either because
-it's impossible to automate them, or because automation of these tasks has not been completed yet. These are
-described below.
-
-#### Dependencies
-
-The repositories and dependencies defined in `grails-app/conf/BuildConfig.groovy` of the Grails 2 project will 
-need to be defined in `build.gradle` of the Grails 3.x project.
-
-#### Modify Grails Package Names
-
-The names of Grails packages have changed in Grails 3. It doesn't appear to be possible to automatically perform
-this task as there's no reliable way of deriving the Grails 3 package name from the Grails 2 package name.
+- merging `DataSource.groovy` and `Config.groovy` into a single `application.yml` or `application.groovy` config file with log4j config removed
+- configuring logging via `logback.groovy`
+- migrating dependencies from `BuildConfig.groovy` to `build.gradle`
