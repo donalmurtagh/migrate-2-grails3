@@ -37,3 +37,12 @@ the Grails 3 app. In Grails 3, functional test classes are stored under `src/int
 functional testing](https://grails.github.io/grails-doc/latest/guide/testing.html#functionalTesting) is added to
 Grails 3, so any existing functional tests should be modified to use this support.
 
+### Dependencies
+
+The repositories and dependencies defined in `grails-app/conf/BuildConfig.groovy` of the Grails 2 project will 
+need to be defined in `build.gradle` of the Grails 3.x project.
+
+### Modify Grails Package Names
+
+The names of Grails packages have changed in Grails 3. It doesn't appear to be possible to automatically perform
+this task as there's no reliable way of deriving the Grails 3 package name from the Grails 2 package name.
