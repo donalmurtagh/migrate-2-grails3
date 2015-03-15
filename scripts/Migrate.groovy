@@ -58,6 +58,8 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
         // add the package statement to the plugin
         List<String> pluginDescriptorContent = grailsSettings.basePluginDescriptor.readLines()
         pluginDescriptorContent.add(0, "package ${pluginPackageName.join('.')}")
+
+        // TODO complete migration of plugin descriptor
     }
 }
 
