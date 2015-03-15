@@ -13,14 +13,8 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
     def console = GrailsConsole.getInstance()
 
     String pathToTargetApp = argsMap.params[0]
-    def pluginPackageName
 
     String baseDir = grailsSettings.baseDir
-
-    if (grailsSettings.pluginProject) {
-        pluginPackageName = getPluginPackageName(argsMap)
-    }
-
     File targetDir = makeFile(baseDir, pathToTargetApp)
 
     if (!targetDir.directory) {
@@ -60,12 +54,23 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
     // copy various individual files
     copyFile(baseDir, ['grails-app', 'conf', 'UrlMappings.groovy'], targetDir, ['grails-app', 'controllers', 'UrlMappings.groovy'])
     copyFile(baseDir, ['grails-app', 'conf', 'BootStrap.groovy'], targetDir, ['grails-app', 'init', 'BootStrap.groovy'])
+
+    if (grailsSettings.pluginProject) {
+        List<String> pluginPackageName = getPluginPackageName(argsMap)
+        String pathSeparator = System.getProperty('file.separator')
+
+        // add the package statement to the plugin
+        List<String> pluginDescriptorContent = grailsSettings.basePluginDescriptor.readLines()
+        pluginDescriptorContent.add(0, "package ${pluginPackageName.join('.')}")
+    }
 }
 
 def createDirectoryIfNotExists(File dir) {
     if (!dir.directory) {
         assert dir.mkdir()
     }
+
+    dir
 }
 
 
@@ -119,17 +124,24 @@ void copyDir(Closure copier, srcBase, srcRelative, targetBase, targetRelative = 
  * @param argsMap
  * @return
  */
-String getPluginPackageName(argsMap) {
+List<String> getPluginPackageName(argsMap) {
+
+    String packageName
+
     if (argsMap.params.size() > 1) {
-        argsMap.params[1]
+        packageName = argsMap.params[1]
 
     } else {
         String appName = Metadata.current['app.name']
 
         // dashes aren't allowed in package names
         appName = StringUtils.remove(appName, '-')
-        "grails.plugins.$appName"
+        packageName = "grails.plugins.$appName"
     }
+
+    // package name regex stolen from http://stackoverflow.com/a/5205467
+    assert packageName ==~ /([\p{L}_\u0024][\p{L}\p{N}_\u0024]*\.)*[\p{L}_\u0024][\p{L}\p{N}_\u0024]*/, "Invalid package name '$packageName' for plugin descriptor"
+    packageName.tokenize('.')
 }
 
 /**
