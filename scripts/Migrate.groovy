@@ -63,15 +63,6 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
     }
 }
 
-def createDirectoryIfNotExists(File dir) {
-    if (!dir.directory) {
-        assert dir.mkdir()
-    }
-
-    dir
-}
-
-
 /**
  * Copies a file
  * @param srcBase File/String indicating the base source dir
