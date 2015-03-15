@@ -11,10 +11,10 @@ A Grails 2 plugin that performs a partial migration of a Grails 2 plugin or appl
     
 #### Arguments
 
-- path: the *relative* path (from the application being migrated) to the empty Grails 3 application
-- plugin package name: this argument is optional and only used if a plugin is being migrated. It specifies the package
+- `path` the *relative* path (from the application being migrated) to the empty Grails 3 application
+- `plugin package name` this argument is optional and only used if a plugin is being migrated. It specifies the package
 name that will be used for the plugin descriptor's class. If omitted a package name of the form `grails.plugins.${appName}`
-will be used 
+will be used. `${appName}` is derived from the `app.name` property in `application.properties`
 
 ### Automatic Migration Tasks
 
