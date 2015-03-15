@@ -9,7 +9,7 @@ replacing ${version} with the latest version of this plugin
 
 ````
 plugins {
-    build    ':migrate-2-grails3:${version}'
+    build ':migrate-2-grails3:${version}'
     // other plugin dependencies
 }
 ````
