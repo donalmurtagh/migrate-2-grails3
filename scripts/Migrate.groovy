@@ -51,6 +51,8 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
     copyDir(copier, sourceTestsBase, 'unit', targetDir, ['src', 'test', 'groovy'])
     copyDir(copier, sourceTestsBase, 'integration', targetDir, ['src', 'integration-test', 'groovy'])
 
+    copyDir(copier, sourceTestsBase, 'functional', targetDir, ['src', 'integration-test', 'groovy'])
+
     // copy web-app
     copyDir(copier, baseDir, 'web-app', targetDir, ['src', 'main', 'webapp'])
 }

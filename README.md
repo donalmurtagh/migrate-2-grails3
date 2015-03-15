@@ -28,14 +28,7 @@ The plugin automatically performs the following tasks:
 
 There are a number of tasks involved in migrating to Grails 3 that the plugin does *not* perform, either because
 it's impossible to automate them, or because automation of these tasks has not been completed yet. These are
-described below
-
-### Functional Tests
-
-Any functional tests in your Grails 2 app (most likely in the `test/functional` directory) will not be copied into
-the Grails 3 app. In Grails 3, functional test classes are stored under `src/integration-test/groovy`. [Support for
-functional testing](https://grails.github.io/grails-doc/latest/guide/testing.html#functionalTesting) is added to
-Grails 3, so any existing functional tests should be modified to use this support.
+described below.
 
 ### Dependencies
 
