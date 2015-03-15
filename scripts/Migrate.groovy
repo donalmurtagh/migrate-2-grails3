@@ -13,25 +13,12 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
     def console = GrailsConsole.getInstance()
 
     String pathToTargetApp = argsMap.params[0]
-    Boolean isPlugin = grailsSettings.pluginProject
     def pluginPackageName
 
     String baseDir = grailsSettings.baseDir
 
-    if (isPlugin) {
-        if (argsMap.params.size() > 1) {
-            pluginPackageName = argsMap.params[1]
-
-        } else {
-            String appName = Metadata.current['app.name']
-
-            // dashes aren't allowed in package names
-            appName = StringUtils.remove(appName, '-')
-            pluginPackageName = "grails.plugins.$appName"
-            console.info "Package name for plugin desccriptor '$baseDir'"
-        }
-    } else {
-        console.info "Source application name ${Metadata.current['app.name']}"
+    if (grailsSettings.pluginProject) {
+        pluginPackageName = getPluginPackageName(argsMap)
     }
 
     File targetDir = makeFile(baseDir, pathToTargetApp)
@@ -64,6 +51,8 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
     copyDir(copier, sourceTestsBase, 'unit', targetDir, ['src', 'test', 'groovy'])
     copyDir(copier, sourceTestsBase, 'integration', targetDir, ['src', 'integration-test', 'groovy'])
 
+    grailsSettings.fun
+
     // copy web-app
     copyDir(copier, baseDir, 'web-app', targetDir, ['src', 'main', 'webapp'])
 }
@@ -94,6 +83,24 @@ def copyDir(Closure copier, srcBase, srcRelative, targetBase, targetRelative = S
         copier(src, target)
     } else {
         console.warn "Directory $src not found in Grails 2 project - skipping"
+    }
+}
+
+/**
+ * Returns the package name that will be used for the plugin descriptor class
+ * @param argsMap
+ * @return
+ */
+String getPluginPackageName(argsMap) {
+    if (argsMap.params.size() > 1) {
+        argsMap.params[1]
+
+    } else {
+        String appName = Metadata.current['app.name']
+
+        // dashes aren't allowed in package names
+        appName = StringUtils.remove(appName, '-')
+        "grails.plugins.$appName"
     }
 }
 
