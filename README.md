@@ -16,12 +16,12 @@ plugins {
 
 - Ensure that the current Grails version matches that of the Grails 2 project and the following command therein
 
-`grails migrate [path to Grails 3 project] [plugin package name]`
+`grails migrate [path-to-Grails3-project] [plugin-package-name]`
     
 #### Arguments
 
-- `path` the *relative* path (from the application being migrated) to the empty Grails 3 application
-- `plugin package name` this argument is optional and only used if a plugin is being migrated. It specifies the package
+- `path-to-Grails3-project` the *relative* path (from the application being migrated) to the empty Grails 3 application
+- `plugin-package-name` this argument is optional and only used if a plugin is being migrated. It specifies the package
 name that will be used for the plugin descriptor's class. If omitted a package name of the form `grails.plugins.${appName}`
 will be used. `${appName}` is derived from the `app.name` property in `application.properties`
 
