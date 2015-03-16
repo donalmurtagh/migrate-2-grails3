@@ -36,7 +36,8 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
     copier = { File src, File target -> FileUtils.copyDirectory(src, target)}
 
     // copy java source
-    copyDir(copier, grailsSettings.sourceDir, 'java', targetSrcDir, 'groovy')
+    File targetGroovySrcDir = makeFile(targetSrcDir, 'groovy')
+    copyDir(copier, grailsSettings.sourceDir, 'java', targetGroovySrcDir)
 
     // copy the tests
     copyDir(copier, sourceTestsBase, 'unit', targetDir, ['src', 'test', 'groovy'])
@@ -52,14 +53,16 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
     copyFile(baseDir, ['grails-app', 'conf', 'BootStrap.groovy'], targetDir, ['grails-app', 'init', 'BootStrap.groovy'])
 
     if (grailsSettings.pluginProject) {
-        List<String> pluginPackageName = getPluginPackageName(argsMap)
-        String pathSeparator = System.getProperty('file.separator')
 
         // add the package statement to the plugin
-        List<String> pluginDescriptorContent = grailsSettings.basePluginDescriptor.readLines()
-        pluginDescriptorContent.add(0, "package ${pluginPackageName.join('.')}")
-
-        // TODO complete migration of plugin descriptor
+        List<String> sourcePluginDescriptorContent = grailsSettings.basePluginDescriptor.readLines()
+        File targetPluginDescriptor = targetGroovySrcDir.listFiles().find { it.name.endsWith("GrailsPlugin.groovy")}
+        assert targetPluginDescriptor, "Plugin descriptor not found under $targetGroovySrcDir"
+        // TODO complete migration of plugin descriptor by replacing every line after
+        // class ExampleGrailsPlugin extends Plugin {
+        // in the target plugin descriptor with every line after
+        // class ExamplePlugin {
+        // in the source plugin descriptor
     }
 }
 
@@ -106,31 +109,6 @@ void copyDir(Closure copier, srcBase, srcRelative, targetBase, targetRelative = 
     } else {
         console.warn "Directory $src not found in Grails 2 project - skipping"
     }
-}
-
-/**
- * Returns the package name that will be used for the plugin descriptor class
- * @param argsMap
- * @return
- */
-List<String> getPluginPackageName(argsMap) {
-
-    String packageName
-
-    if (argsMap.params.size() > 1) {
-        packageName = argsMap.params[1]
-
-    } else {
-        String appName = Metadata.current['app.name']
-
-        // dashes aren't allowed in package names
-        appName = StringUtils.remove(appName, '-')
-        packageName = "grails.plugins.$appName"
-    }
-
-    // package name regex stolen from http://stackoverflow.com/a/5205467
-    assert packageName ==~ /([\p{L}_\u0024][\p{L}\p{N}_\u0024]*\.)*[\p{L}_\u0024][\p{L}\p{N}_\u0024]*/, "Invalid package name '$packageName' for plugin descriptor"
-    packageName.tokenize('.')
 }
 
 /**
