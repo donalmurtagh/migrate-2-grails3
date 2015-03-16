@@ -14,9 +14,9 @@ plugins {
 }
 ````
 
-- Ensure that the current Grails version matches that of the Grails 2 project and the following command therein
+- Ensure that the current Grails version matches that of the Grails 2 project and execute the following command therein
 
-`grails migrate [path-to-Grails3-project]
+`grails migrate [path-to-Grails3-project]`
     
 #### Arguments
 
