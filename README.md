@@ -5,7 +5,7 @@ A Grails 2 plugin that performs a partial migration of a Grails 2 plugin or appl
 
 - Create an empty Grails 3 application or plugin (depending on what you're migrating) 
 - Install this plugin in the Grails 2 project being migrated, i.e. add the following to `BuildConfig.groovy`
-replacing ${version} with the latest version of this plugin
+replacing `${version}` with the latest version of this plugin
 
 ````
 plugins {
