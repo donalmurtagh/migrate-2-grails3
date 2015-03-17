@@ -1,7 +1,10 @@
 import grails.build.logging.GrailsConsole
 import grails.util.Metadata
+import groovy.io.FileType
 import org.apache.commons.lang.StringUtils
 import  org.apache.commons.io.FileUtils
+
+import java.util.regex.Pattern
 
 includeTargets << grailsScript("_GrailsInit")
 includeTargets << grailsScript("_GrailsArgParsing")
@@ -11,7 +14,6 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
     depends(parseArguments)
 
     def console = GrailsConsole.getInstance()
-
     String pathToTargetApp = argsMap.params[0]
 
     String baseDir = grailsSettings.baseDir
@@ -54,17 +56,59 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
 
     if (grailsSettings.pluginProject) {
 
-        // add the package statement to the plugin
+        // migrate the plugin descriptor
         List<String> sourcePluginDescriptorContent = grailsSettings.basePluginDescriptor.readLines()
-        File targetPluginDescriptor = targetGroovySrcDir.listFiles().find { it.name.endsWith("GrailsPlugin.groovy")}
+        File targetPluginDescriptor
+
+        targetGroovySrcDir.eachFileRecurse(FileType.FILES) {
+            if (it.name.endsWith('GrailsPlugin.groovy')) {
+                targetPluginDescriptor = it
+            }
+        }
+
         assert targetPluginDescriptor, "Plugin descriptor not found under $targetGroovySrcDir"
-        // TODO complete migration of plugin descriptor by replacing every line after
+        List<String> targetPluginDescriptorContent = targetPluginDescriptor.readLines()
+
+        // complete migration of plugin descriptor by replacing every line after
         // class ExampleGrailsPlugin extends Plugin {
         // in the target plugin descriptor with every line after
         // class ExamplePlugin {
         // in the source plugin descriptor
+        Integer srcPluginClassDefIndex = getPluginClassDefinitionIndex(sourcePluginDescriptorContent)
+        Integer targetPluginClassDefIndex = getPluginClassDefinitionIndex(targetPluginDescriptorContent)
+
+        def lineBreak = System.getProperty("line.separator")
+        String pluginDescriptorClassBody = sourcePluginDescriptorContent[srcPluginClassDefIndex + 1..-1].join(lineBreak)
+        String pluginDescriptorClassHeader = targetPluginDescriptorContent[0..targetPluginClassDefIndex].join(lineBreak)
+
+        targetPluginDescriptor.text = pluginDescriptorClassHeader + pluginDescriptorClassBody
     }
 }
+
+/**
+ * Find the line number that contains the plugin class definition
+ * @param pluginClassContent
+ * @return
+ */
+Integer getPluginClassDefinitionIndex(List<String> pluginClassContent) {
+
+    def lineNumber = -1
+
+    // a real programmer would use ANTLR
+    Pattern regex = Pattern.compile(/.*class.*\s+.*[a-zA-Z_$]+GrailsPlugin.*\{.*/)
+
+    pluginClassContent.find { line ->
+        ++lineNumber
+        regex.matcher(line).matches()
+    }
+
+    if (lineNumber == -1) {
+        def lineBreak = System.getProperty("line.separator")
+        throw new RuntimeException("Plugin class definition not found in ${pluginClassContent.join(lineBreak)}")
+    }
+    lineNumber
+}
+
 
 /**
  * Copies a file
