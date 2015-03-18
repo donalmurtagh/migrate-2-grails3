@@ -102,10 +102,9 @@ Integer getPluginClassDefinitionIndex(List<String> pluginClassContent) {
         regex.matcher(line).matches()
     }
 
-    if (lineNumber == -1) {
-        def lineBreak = System.getProperty("line.separator")
-        throw new RuntimeException("Plugin class definition not found in ${pluginClassContent.join(lineBreak)}")
-    }
+    def lineBreak = System.getProperty("line.separator")
+    assert lineNumber != -1, "Plugin class definition not found in content ${pluginClassContent.join(lineBreak)}"
+
     lineNumber
 }
 
