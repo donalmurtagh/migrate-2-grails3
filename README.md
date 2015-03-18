@@ -14,13 +14,13 @@ plugins {
 }
 ````
 
-- Ensure that the current Grails version matches that of the Grails 2 project and execute the following command therein
+- Ensure that the current Grails version matches that of the Grails 2 project and execute the following command in the Grails 2 project
 
 `grails migrate [path-to-grails3-project]`
     
 #### Arguments
 
-- `path-to-grails3-project` the *relative* path (from the application being migrated) to the empty Grails 3 application
+- `path-to-grails3-project` the *relative* path from the Grails 2 project to the empty Grails 3 project
 
 ### Automatic Migration Tasks
 
