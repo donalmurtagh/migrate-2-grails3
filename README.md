@@ -44,3 +44,4 @@ Some of the steps described in the aforementioned sections of the migration guid
 - merging `DataSource.groovy` and `Config.groovy` into a single `application.yml` or `application.groovy` config file with log4j config removed
 - configuring logging via `logback.groovy`
 - migrating dependencies from `BuildConfig.groovy` to `build.gradle`
+- setting the application/plugin version in `build.gradle`
