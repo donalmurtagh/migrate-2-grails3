@@ -33,7 +33,7 @@ After following the instructions above, if the project being migrated is a plugi
 section will also have been performed. if the project being migrated is an application, steps 1-2 of the 
 [Upgrading Applications](https://grails.github.io/grails-doc/latest/guide/upgrading.html#upgradingApps) section will have been performed.
 
-### Gant Script
+### Gant Scripts
 
 Any Gant scripts in the `scripts` directory of the Grails 2.x project will be copied to the `src/main/scripts` directory of the Grails 3.x project. However the contents of these scripts must be migrated from Gant to Gradle, as described in step 7 of the [plugin migration guide](https://grails.github.io/grails-doc/latest/guide/upgrading.html#upgradingPlugins).
  
