@@ -33,14 +33,24 @@ After following the instructions above, if the project being migrated is a plugi
 section will also have been performed. if the project being migrated is an application, steps 1-2 of the 
 [Upgrading Applications](https://grails.github.io/grails-doc/latest/guide/upgrading.html#upgradingApps) section will have been performed.
 
-#### Exceptions
+#### Mandatory Exceptions
  
-Some of the steps described in the aforementioned sections of the migration guide are not performed by this plugin. These are:
+Some of the steps described in the aforementioned sections of the migration guide are not performed by this plugin and must be performed manually instead:
 
 - merging `DataSource.groovy` and `Config.groovy` into a single `application.yml` or `application.groovy` config file with log4j config removed
 - configuring logging via `logback.groovy`
 - migrating dependencies from `BuildConfig.groovy` to `build.gradle`
 - setting the application/plugin version in `build.gradle`
+
+#### Optional Exceptions
+ 
+Some of the steps described in the aforementioned sections of the migration guide are not performed by this plugin and may need to be performed manually instead. In other words, dependending of the contents of the project being migrated, each of the following steps may not be relevant
+
+- migrating dependencies from `lib` directory to `build.gradle`
+- migrating Spring beans from `web-app/WEB-INF/applicationContext.xml` to `grails-app/conf/spring/resources.groovy`
+- Customizations to `web.xml` that were applied via `src/templates/war/web.xml` must be applied via Spring in Grails 3.x
+- migrating `.tld` files in `web-app/WEB-INF/tld`
+
 
 #### Gant Scripts
 
