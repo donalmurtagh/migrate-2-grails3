@@ -24,7 +24,7 @@ plugins {
     
 #### Arguments
 
-- `path-to-grails3-project` the *relative* path from the Grails 2.x project to the empty Grails 3.x project
+- `path-to-grails3-project` the *relative* path from the Grails 2.x project to the Grails 3.x project
 
 ### Automatic Migration Tasks
 
