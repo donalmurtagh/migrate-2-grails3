@@ -18,7 +18,7 @@ plugins {
 ````
 
 - Set the current Grails version to 2.x
-- Ensure that the current Grails version matches that of the Grails 2.x project and execute the following command in the Grails 2.x project
+- Execute the following command in the Grails 2.x project
 
 `grails migrate [path-to-grails3-project]`
     
