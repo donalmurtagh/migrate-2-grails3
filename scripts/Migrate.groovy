@@ -1,174 +1,158 @@
 import grails.build.logging.GrailsConsole
-import grails.util.Metadata
 import groovy.io.FileType
-import org.apache.commons.lang.StringUtils
-import  org.apache.commons.io.FileUtils
+import org.apache.commons.io.FileUtils
 
 import java.util.regex.Pattern
 
-includeTargets << grailsScript("_GrailsInit")
 includeTargets << grailsScript("_GrailsArgParsing")
+
+console = GrailsConsole.instance
 
 target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
 
     depends(parseArguments)
 
-    def console = GrailsConsole.getInstance()
     String pathToTargetApp = argsMap.params[0]
+    String baseDirPath = grailsSettings.baseDir.path
 
-    String baseDir = grailsSettings.baseDir
-    File targetDir = makeFile(baseDir, pathToTargetApp)
-
+    File targetDir = canonicalFile(baseDirPath, pathToTargetApp)
+    String targetDirPath = targetDir.path
     if (!targetDir.directory) {
-        console.error "Grails 3 project not found at $targetDir - quitting"
+        console.error "Grails 3 project not found at $targetDirPath - quitting"
         return
     }
 
-    def targetSrcDir = makeFile(targetDir, ['src', 'main'])
+    String targetSrcDirPath = canonicalFile(targetDirPath, 'src/main').path
 
-    Closure copier = { File src, File target -> FileUtils.copyDirectoryToDirectory(src, target)}
+    Closure copier = { File source, File target -> FileUtils.copyDirectoryToDirectory(source, target) }
 
-    // copy groovy source
-    copyDir(copier, grailsSettings.sourceDir, 'groovy', targetSrcDir)
+    // copy Groovy source
+    copyDir(copier, grailsSettings.sourceDir.path, 'groovy', targetSrcDirPath)
 
     // copy grails-app
-    copyDir(copier, baseDir, 'grails-app', targetDir, 'grails-app')
+    copyDir(copier, baseDirPath, 'grails-app', targetDirPath, 'grails-app')
 
-    def sourceTestsBase = grailsSettings.testSourceDir
-    copier = { File src, File target -> FileUtils.copyDirectory(src, target)}
+    String sourceTestsBase = grailsSettings.testSourceDir.path
+    copier = { File source, File target -> FileUtils.copyDirectory(source, target) }
 
-    // copy java source
-    File targetGroovySrcDir = makeFile(targetSrcDir, 'groovy')
-    copyDir(copier, grailsSettings.sourceDir, 'java', targetGroovySrcDir)
+    // copy Java source
+    File targetGroovySrcDir = canonicalFile(targetSrcDirPath, 'groovy')
+    String targetGroovySrcDirPath = targetGroovySrcDir.path
+    copyDir(copier, grailsSettings.sourceDir.path, 'java', targetGroovySrcDirPath)
 
     // copy the tests
-    copyDir(copier, sourceTestsBase, 'unit', targetDir, ['src', 'test', 'groovy'])
-    copyDir(copier, sourceTestsBase, 'integration', targetDir, ['src', 'integration-test', 'groovy'])
-    copyDir(copier, sourceTestsBase, 'functional', targetDir, ['src', 'integration-test', 'groovy'])
+    copyDir(copier, sourceTestsBase, 'unit', targetDirPath, 'src/test/groovy')
+    copyDir(copier, sourceTestsBase, 'integration', targetDirPath, 'src/integration-test/groovy')
+    copyDir(copier, sourceTestsBase, 'functional', targetDirPath, 'src/integration-test/groovy')
 
     // copy web-app and scripts
-    copyDir(copier, baseDir, 'web-app', targetDir, ['src', 'main', 'webapp'])
-    copyDir(copier, baseDir, 'scripts', targetDir, ['src', 'main', 'scripts'])
+    copyDir(copier, baseDirPath, 'web-app', targetDirPath, 'src/main/webapp')
+    copyDir(copier, baseDirPath, 'scripts', targetDirPath, 'src/main/scripts')
 
     // copy various individual files
-    copyFile(baseDir, ['grails-app', 'conf', 'UrlMappings.groovy'], targetDir, ['grails-app', 'controllers', 'UrlMappings.groovy'])
-    copyFile(baseDir, ['grails-app', 'conf', 'BootStrap.groovy'], targetDir, ['grails-app', 'init', 'BootStrap.groovy'])
+    copyFile(baseDirPath, 'grails-app/conf/UrlMappings.groovy', targetDirPath, 'grails-app/controllers/UrlMappings.groovy')
+    copyFile(baseDirPath, 'grails-app/conf/BootStrap.groovy', targetDirPath, 'grails-app/init/BootStrap.groovy')
 
     if (grailsSettings.pluginProject) {
 
         // migrate the plugin descriptor
-        List<String> sourcePluginDescriptorContent = grailsSettings.basePluginDescriptor.readLines()
         File targetPluginDescriptor
-
         targetGroovySrcDir.eachFileRecurse(FileType.FILES) {
             if (it.name.endsWith('GrailsPlugin.groovy')) {
                 targetPluginDescriptor = it
             }
         }
 
-        assert targetPluginDescriptor, "Plugin descriptor not found under $targetGroovySrcDir"
-        List<String> targetPluginDescriptorContent = targetPluginDescriptor.readLines()
+        assert targetPluginDescriptor, "Plugin descriptor not found under $targetGroovySrcDirPath"
+        List<String> targetDescriptorContent = targetPluginDescriptor.readLines()
 
         // complete migration of plugin descriptor by replacing every line after
         // class ExampleGrailsPlugin extends Plugin {
         // in the target plugin descriptor with every line after
         // class ExamplePlugin {
         // in the source plugin descriptor
-        Integer srcPluginClassDefIndex = getPluginClassDefinitionIndex(sourcePluginDescriptorContent)
-        Integer targetPluginClassDefIndex = getPluginClassDefinitionIndex(targetPluginDescriptorContent)
+        List<String> sourceDescriptorContent = grailsSettings.basePluginDescriptor.readLines()
+        int sourceClassDefIndex = getPluginClassDefinitionIndex(sourceDescriptorContent)
+        int targetClassDefIndex = getPluginClassDefinitionIndex(targetDescriptorContent)
 
-        def lineBreak = System.getProperty("line.separator")
-        String pluginDescriptorClassBody = sourcePluginDescriptorContent[srcPluginClassDefIndex + 1..-1].join(lineBreak)
-        String pluginDescriptorClassHeader = targetPluginDescriptorContent[0..targetPluginClassDefIndex].join(lineBreak)
-
-        targetPluginDescriptor.text = pluginDescriptorClassHeader + pluginDescriptorClassBody
+        targetPluginDescriptor.withWriter { BufferedWriter writer ->
+            sourceDescriptorContent[sourceClassDefIndex + 1..-1].each { writer.writeLine it }
+            targetDescriptorContent[0..targetClassDefIndex].each { writer.writeLine it }
+        }
     }
 }
 
 /**
- * Find the line number that contains the plugin class definition
- * @param pluginClassContent
- * @return
+ * Find the line number that contains the plugin class definition.
+ * @param lines the plugin class content
+ * @return the index
  */
-Integer getPluginClassDefinitionIndex(List<String> pluginClassContent) {
-
-    def lineNumber = -1
+int getPluginClassDefinitionIndex(List<String> lines) {
 
     // a real programmer would use ANTLR
     Pattern regex = Pattern.compile(/.*class.*\s+.*[a-zA-Z_$]+GrailsPlugin.*\{.*/)
 
-    pluginClassContent.find { line ->
+    int lineNumber = -1
+    for (String line in lines) {
         ++lineNumber
-        regex.matcher(line).matches()
+        if (regex.matcher(line).matches()) {
+            return lineNumber
+        }
     }
 
-    def lineBreak = System.getProperty("line.separator")
-    assert lineNumber != -1, "Plugin class definition not found in content ${pluginClassContent.join(lineBreak)}"
-
-    lineNumber
+    throw new IllegalStateException("Plugin class definition not found in content ${lines.join(System.getProperty('line.separator'))}")
 }
 
-
 /**
- * Copies a file
- * @param srcBase File/String indicating the base source dir
- * @param srcRelative String/List<String> indicating the relative path from srcBase to the source file
- * @param targetBase File/String indicating the base target dir
- * @param targetRelative String/List<String> indicating the relative path from targetBase to the target file. If targetBase
+ * Copies a file.
+ * @param sourceBase the base source dir
+ * @param sourceRelative the relative path from sourceBase to the source file
+ * @param targetBase the base target dir
+ * @param targetRelative the relative path from targetBase to the target file. If targetBase
  * is the target file, this may be omitted
  */
-void copyFile(srcBase, srcRelative, targetBase, targetRelative = StringUtils.EMPTY) {
+void copyFile(String sourceBase, String sourceRelative, String targetBase, String targetRelative = '') {
 
-    def src = makeFile(srcBase, srcRelative)
-    def console = GrailsConsole.instance
-
-    if (src.file) {
-        def target = makeFile(targetBase, targetRelative)
-        console.info "Copying $src to $target"
-        FileUtils.copyFile(src, target)
-
-    } else {
-        console.warn "File $src not found in Grails 2 project - skipping"
+    File source = canonicalFile(sourceBase, sourceRelative)
+    if (!source.file) {
+        console.warn "File $source not found in Grails 2 project - skipping"
+        return
     }
+
+    File target = canonicalFile(targetBase, targetRelative)
+    console.info "Copying $source to $target"
+    FileUtils.copyFile(source, target)
 }
 
 /**
- * Copies the contents of one directory to another
+ * Copies the contents of one directory to another.
  * @param copier performs the copying
- * @param srcBase File/String indicating the base source dir
- * @param srcRelative String/List<String> indicating the relative path from srcBase to the source dir
- * @param targetBase File/String indicating the base target dir
- * @param targetRelative String/List<String> indicating the relative path from targetBase to the target dir. If targetBase
+ * @param sourceBase the base source dir
+ * @param sourceRelative the relative path from sourceBase to the source dir
+ * @param targetBase the base target dir
+ * @param targetRelative the relative path from targetBase to the target dir. If targetBase
  * is the target dir, this may be omitted
  */
-void copyDir(Closure copier, srcBase, srcRelative, targetBase, targetRelative = StringUtils.EMPTY) {
-    def src = makeFile(srcBase, srcRelative)
-    def console = GrailsConsole.instance
-
-    if (src.directory) {
-        def target = makeFile(targetBase, targetRelative)
-        console.info "Copying contents of $src to $target"
-        copier(src, target)
-    } else {
-        console.warn "Directory $src not found in Grails 2 project - skipping"
+void copyDir(Closure copier, String sourceBase, String sourceRelative, String targetBase, String targetRelative = '') {
+    File source = canonicalFile(sourceBase, sourceRelative)
+    if (!source.directory) {
+        console.warn "Directory $source not found in Grails 2 project - skipping"
+        return
     }
+
+    File target = canonicalFile(targetBase, targetRelative)
+    console.info "Copying contents of $source to $target"
+    copier(source, target)
 }
 
 /**
- * Construct a canonical file from a base file or path and a relative path from it
- * @param base a File or path (String) to a file
- * @param relative a String path or List of path components that are joined to form the relative path
- * @return
+ * Construct a canonical file from a base path and a relative path from it.
+ * @param base path to a file
+ * @param relative the relative path
+ * @return the file
  */
-File makeFile(base, relative) {
-
-    String pathSeparator = System.getProperty('file.separator')
-
-    if (relative instanceof List) {
-        relative = relative.join(pathSeparator)
-    }
-    String relativePath = [base.toString(), relative].join(pathSeparator)
-    new File(relativePath).canonicalFile
+File canonicalFile(String base, String relative) {
+    new File(base, relative).canonicalFile
 }
 
 setDefaultTarget(migrate)
