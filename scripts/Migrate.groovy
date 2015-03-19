@@ -92,11 +92,11 @@ int getPluginClassDefinitionIndex(List<String> lines) {
     // a real programmer would use ANTLR
     Pattern regex = Pattern.compile(/.*class.*\s+.*[a-zA-Z_$]+GrailsPlugin.*\{.*/)
 
-    int lineNumber = -1
-    for (String line in lines) {
-        ++lineNumber
+    for (int i = 0; i < lines.size(); i++) {
+        String line = lines[i]
+
         if (regex.matcher(line).matches()) {
-            return lineNumber
+            return i
         }
     }
 
