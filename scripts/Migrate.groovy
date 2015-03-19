@@ -24,34 +24,49 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
 
     String targetSrcDirPath = canonicalFile(targetDirPath, 'src/main').path
 
-    Closure copier = { File source, File target -> FileUtils.copyDirectoryToDirectory(source, target) }
+    Closure dirToDirCopier = { File source, File target -> FileUtils.copyDirectoryToDirectory(source, target) }
+    Closure dirCopier = { File source, File target -> FileUtils.copyDirectory(source, target) }
 
     // copy Groovy source
-    copyDir(copier, grailsSettings.sourceDir.path, 'groovy', targetSrcDirPath)
+    copyDir(dirToDirCopier, grailsSettings.sourceDir.path, 'groovy', targetSrcDirPath)
 
     // copy grails-app
-    copyDir(copier, baseDirPath, 'grails-app', targetDirPath, 'grails-app')
+    copyDir(dirCopier, baseDirPath, 'grails-app', targetDirPath, 'grails-app')
 
     String sourceTestsBase = grailsSettings.testSourceDir.path
-    copier = { File source, File target -> FileUtils.copyDirectory(source, target) }
 
     // copy Java source
     File targetGroovySrcDir = canonicalFile(targetSrcDirPath, 'groovy')
     String targetGroovySrcDirPath = targetGroovySrcDir.path
-    copyDir(copier, grailsSettings.sourceDir.path, 'java', targetGroovySrcDirPath)
+    copyDir(dirCopier, grailsSettings.sourceDir.path, 'java', targetGroovySrcDirPath)
 
     // copy the tests
-    copyDir(copier, sourceTestsBase, 'unit', targetDirPath, 'src/test/groovy')
-    copyDir(copier, sourceTestsBase, 'integration', targetDirPath, 'src/integration-test/groovy')
-    copyDir(copier, sourceTestsBase, 'functional', targetDirPath, 'src/integration-test/groovy')
+    copyDir(dirCopier, sourceTestsBase, 'unit', targetDirPath, 'src/test/groovy')
+    copyDir(dirCopier, sourceTestsBase, 'integration', targetDirPath, 'src/integration-test/groovy')
+    copyDir(dirCopier, sourceTestsBase, 'functional', targetDirPath, 'src/integration-test/groovy')
 
     // copy web-app and scripts
-    copyDir(copier, baseDirPath, 'web-app', targetDirPath, 'src/main/webapp')
-    copyDir(copier, baseDirPath, 'scripts', targetDirPath, 'src/main/scripts')
+    copyDir(dirCopier, baseDirPath, 'web-app', targetDirPath, 'src/main/webapp')
+    copyDir(dirCopier, baseDirPath, 'scripts', targetDirPath, 'src/main/scripts')
 
-    // copy various individual files
-    copyFile(baseDirPath, 'grails-app/conf/UrlMappings.groovy', targetDirPath, 'grails-app/controllers/UrlMappings.groovy')
-    copyFile(baseDirPath, 'grails-app/conf/BootStrap.groovy', targetDirPath, 'grails-app/init/BootStrap.groovy')
+    File targetConfigDir = new File(targetDirPath, 'grails-app/conf')
+
+    // move various files
+    moveFile(targetConfigDir.canonicalPath, 'UrlMappings.groovy', targetDirPath, 'grails-app/controllers/UrlMappings.groovy')
+    moveFile(targetConfigDir.canonicalPath, 'BootStrap.groovy', targetDirPath, 'grails-app/init/BootStrap.groovy')
+
+    // delete files included in the copying of grails-app which aren't used in Grails 3
+    ['DataSource.groovy', 'Config.groovy'].each {
+        File configFile = new File(targetConfigDir, it)
+        FileUtils.deleteQuietly(configFile)
+    }
+
+    // delete filters, these should be replaced by interceptors
+    targetConfigDir.eachFileRecurse(FileType.FILES) { File file ->
+        if (file.name.endsWith('Filters.groovy')) {
+            assert file.delete(), "Failed to delete filter file: $file"
+        }
+    }
 
     if (grailsSettings.pluginProject) {
 
@@ -104,14 +119,14 @@ int getPluginClassDefinitionIndex(List<String> lines) {
 }
 
 /**
- * Copies a file.
+ * Moves a file.
  * @param sourceBase the base source dir
  * @param sourceRelative the relative path from sourceBase to the source file
  * @param targetBase the base target dir
  * @param targetRelative the relative path from targetBase to the target file. If targetBase
  * is the target file, this may be omitted
  */
-void copyFile(String sourceBase, String sourceRelative, String targetBase, String targetRelative = '') {
+void moveFile(String sourceBase, String sourceRelative, String targetBase, String targetRelative) {
 
     File source = canonicalFile(sourceBase, sourceRelative)
     if (!source.file) {
@@ -120,8 +135,9 @@ void copyFile(String sourceBase, String sourceRelative, String targetBase, Strin
     }
 
     File target = canonicalFile(targetBase, targetRelative)
-    console.info "Copying $source to $target"
-    FileUtils.copyFile(source, target)
+    FileUtils.deleteQuietly(target)
+    console.info "Moving $source to $target"
+    FileUtils.moveFile(source, target)
 }
 
 /**
