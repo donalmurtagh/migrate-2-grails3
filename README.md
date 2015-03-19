@@ -1,11 +1,13 @@
 ## migrate-2-grails3
 A Grails 2 plugin that performs a partial migration of a Grails 2 plugin or application to Grails 3
 
+### Prerequisites
+Grails 2.x and 3.x are installed where 2.x is the Grails version of the project being migrated, and 3.x is the target Grails version 
+
 ### Usage
-- Install Grails 3.x
 - Set the current Grails version to 3.x
-- Create an empty Grails 3 project with the same name and type (application or plugin) as the Grails 2 project being migrated
-- Install this plugin in the Grails 2 project being migrated, i.e. add the following to `BuildConfig.groovy`
+- Create an empty Grails 3.x project with the same name and type (application or plugin) as the Grails 2.x project being migrated
+- Install this plugin in the Grails 2.x project being migrated, i.e. add the following to `BuildConfig.groovy`
 replacing `${version}` with the latest version of this plugin
 
 ````
@@ -15,13 +17,14 @@ plugins {
 }
 ````
 
-- Ensure that the current Grails version matches that of the Grails 2 project and execute the following command in the Grails 2 project
+- Set the current Grails version to 2.x
+- Ensure that the current Grails version matches that of the Grails 2.x project and execute the following command in the Grails 2.x project
 
 `grails migrate [path-to-grails3-project]`
     
 #### Arguments
 
-- `path-to-grails3-project` the *relative* path from the Grails 2 project to the empty Grails 3 project
+- `path-to-grails3-project` the *relative* path from the Grails 2.x project to the empty Grails 3.x project
 
 ### Automatic Migration Tasks
 
