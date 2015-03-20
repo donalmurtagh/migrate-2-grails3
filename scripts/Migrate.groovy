@@ -61,7 +61,7 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
     targetConfigDir.eachFileRecurse(FileType.FILES) { File file ->
         if (file.name.endsWith('Filters.groovy')) {
             assert file.delete(), "Failed to delete filter file: $file"
-            console.info "Deleted filter file: $file"
+            console.warn "Unable to migrate $file. The filters in this file should be implemented as interceptors in the Grails 3 project"
         }
     }
 
@@ -109,15 +109,16 @@ int getPluginClassDefinitionIndex(List<String> lines) {
     // a real programmer would use ANTLR
     Pattern pluginClassDefRegex = Pattern.compile(/.*class.*\s+.*[a-zA-Z_$]+GrailsPlugin.*\{.*/)
 
-    for (int i = 0; i < lines.size(); i++) {
-        String line = lines[i]
+    for (int lineNumber = 0; lineNumber < lines.size(); lineNumber++) {
+        String line = lines[lineNumber]
 
         if (pluginClassDefRegex.matcher(line).matches()) {
-            return i
+            return lineNumber
         }
     }
 
-    assert false, "Plugin class definition not found in content ${lines.join(System.getProperty('line.separator'))}"
+    String lineBreak = System.getProperty('line.separator')
+    assert false, "Plugin class definition not found in content ${lines.join(lineBreak)}"
 }
 
 /**
@@ -132,7 +133,7 @@ void moveFile(String sourceBase, String sourceRelative, String targetBase, Strin
 
     File source = canonicalFile(sourceBase, sourceRelative)
     if (!source.file) {
-        console.warn "File $source not found in Grails 2 project - skipping"
+        console.info "File $source not found in Grails 2 project - skipping"
         return
     }
 
@@ -153,7 +154,7 @@ void moveFile(String sourceBase, String sourceRelative, String targetBase, Strin
 void copyDir(String sourceBase, String sourceRelative, String targetBase, String targetRelative = '') {
     File source = canonicalFile(sourceBase, sourceRelative)
     if (!source.directory) {
-        console.warn "Directory $source not found in Grails 2 project - skipping"
+        console.info "Directory $source not found in Grails 2 project - skipping"
         return
     }
 
