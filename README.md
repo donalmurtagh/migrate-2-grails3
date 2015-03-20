@@ -43,6 +43,9 @@ After following the instructions above, if the project being migrated is a plugi
 section will also have been performed. if the project being migrated is an application, steps 1-2 of the 
 [Upgrading Applications](https://grails.github.io/grails-doc/latest/guide/upgrading.html#upgradingApps) section will have been performed.
 
+A few of other minor tasks are attempted which aren't explicitly mentioned in the migration guide, e.g. copying of
+`README.md` and `LICENSE` files from the root of the Grails 2.x project to the root of the Grails 3.x project.
+
 #### Mandatory Exceptions
 Some of the steps described in the aforementioned sections of the migration guide are not performed by this plugin and must be performed manually instead:
 

@@ -1,5 +1,5 @@
 class Migrate2Grails3GrailsPlugin {
-    def version = "0.2"
+    def version = "0.3"
     def grailsVersion = "2.0 > *"
     def title = "Migrate2 Grails3 Plugin"
     def author = "Donal Murtagh"

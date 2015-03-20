@@ -83,7 +83,7 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
     }
 
     // try to copy various files that are reasonably likely to exist in the project root
-    ['README.md', ' LICENSE', '.gitignore'].each { String rootFileName ->
+    ['README.md', ' LICENSE'].each { String rootFileName ->
         copyPath(fileCopier, baseDirPath, rootFileName, targetDirPath, rootFileName)
     }
 
