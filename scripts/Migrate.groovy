@@ -24,30 +24,41 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
 
     File targetGroovySrcDir = canonicalFile(targetDirPath, 'src/main/groovy')
 
+    Closure dirCopier = { File source, File target ->
+        console.info "Copying contents of $source to $target"
+        FileUtils.copyDirectory(source, target)
+    }
+
     // copy Groovy and Java sources
     ['java', 'groovy'].each { String srcDirName ->
-        copyDir(grailsSettings.sourceDir.path, srcDirName, targetGroovySrcDir.path)
+        copyPath(dirCopier, grailsSettings.sourceDir.path, srcDirName, targetGroovySrcDir.path)
     }
 
     // copy grails-app
-    copyDir(baseDirPath, 'grails-app', targetDirPath, 'grails-app')
+    copyPath(dirCopier, baseDirPath, 'grails-app', targetDirPath, 'grails-app')
 
     String sourceTestsBase = grailsSettings.testSourceDir.path
 
     // copy the tests
-    copyDir(sourceTestsBase, 'unit', targetDirPath, 'src/test/groovy')
-    copyDir(sourceTestsBase, 'integration', targetDirPath, 'src/integration-test/groovy')
-    copyDir(sourceTestsBase, 'functional', targetDirPath, 'src/integration-test/groovy')
+    copyPath(dirCopier, sourceTestsBase, 'unit', targetDirPath, 'src/test/groovy')
+    copyPath(dirCopier, sourceTestsBase, 'integration', targetDirPath, 'src/integration-test/groovy')
+    copyPath(dirCopier, sourceTestsBase, 'functional', targetDirPath, 'src/integration-test/groovy')
 
     // copy web-app and scripts
-    copyDir(baseDirPath, 'web-app', targetDirPath, 'src/main/webapp')
-    copyDir(baseDirPath, 'scripts', targetDirPath, 'src/main/scripts')
+    copyPath(dirCopier, baseDirPath, 'web-app', targetDirPath, 'src/main/webapp')
+    copyPath(dirCopier, baseDirPath, 'scripts', targetDirPath, 'src/main/scripts')
 
     File targetConfigDir = new File(targetDirPath, 'grails-app/conf')
 
     // move various files
-    moveFile(targetConfigDir.canonicalPath, 'UrlMappings.groovy', targetDirPath, 'grails-app/controllers/UrlMappings.groovy')
-    moveFile(targetConfigDir.canonicalPath, 'BootStrap.groovy', targetDirPath, 'grails-app/init/BootStrap.groovy')
+    Closure fileMover = { File source, File target ->
+        FileUtils.deleteQuietly(target)
+        console.info "Moving $source to $target"
+        FileUtils.moveFile(source, target)
+    }
+
+    copyPath(fileMover, targetConfigDir.canonicalPath, 'UrlMappings.groovy', targetDirPath, 'grails-app/controllers/UrlMappings.groovy')
+    copyPath(fileMover, targetConfigDir.canonicalPath, 'BootStrap.groovy', targetDirPath, 'grails-app/init/BootStrap.groovy')
 
     // delete WEB-INF and META-INF dirs
     // TODO find out if .tld files in WEB-INF should instead be moved to webapp. See issue #4
@@ -122,36 +133,16 @@ int getPluginClassDefinitionIndex(List<String> lines) {
 }
 
 /**
- * Moves a file.
- * @param sourceBase the base source dir
- * @param sourceRelative the relative path from sourceBase to the source file
- * @param targetBase the base target dir
- * @param targetRelative the relative path from targetBase to the target file. If targetBase
- * is the target file, this may be omitted
+ * Copies one path to another
+ * @param copyTask performs the copy operation
+ * @param sourceBase the base source path
+ * @param sourceRelative the relative path from sourceBase to the source path
+ * @param targetBase the base target path
+ * @param targetRelative the relative path from targetBase to the target path. If targetBase
+ * is the target path, this may be omitted
  */
-void moveFile(String sourceBase, String sourceRelative, String targetBase, String targetRelative) {
+void copyPath(Closure copyTask, String sourceBase, String sourceRelative, String targetBase, String targetRelative = '') {
 
-    File source = canonicalFile(sourceBase, sourceRelative)
-    if (!source.file) {
-        console.info "File $source not found in Grails 2 project - skipping"
-        return
-    }
-
-    File target = canonicalFile(targetBase, targetRelative)
-    FileUtils.deleteQuietly(target)
-    console.info "Moving $source to $target"
-    FileUtils.moveFile(source, target)
-}
-
-/**
- * Copies the contents of one directory to another.
- * @param sourceBase the base source dir
- * @param sourceRelative the relative path from sourceBase to the source dir
- * @param targetBase the base target dir
- * @param targetRelative the relative path from targetBase to the target dir. If targetBase
- * is the target dir, this may be omitted
- */
-void copyDir(String sourceBase, String sourceRelative, String targetBase, String targetRelative = '') {
     File source = canonicalFile(sourceBase, sourceRelative)
     if (!source.directory) {
         console.info "Directory $source not found in Grails 2 project - skipping"
@@ -159,8 +150,7 @@ void copyDir(String sourceBase, String sourceRelative, String targetBase, String
     }
 
     File target = canonicalFile(targetBase, targetRelative)
-    console.info "Copying contents of $source to $target"
-    FileUtils.copyDirectory(source, target)
+    copyTask(source, target)
 }
 
 /**
