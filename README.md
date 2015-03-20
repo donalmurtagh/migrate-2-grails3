@@ -25,7 +25,6 @@ plugins {
 - Once this command has completed, you can remove the plugin from the Grails 2.x app
 
 #### Arguments
-
 - `path-to-grails3-project` the *relative* path from the Grails 2.x project to the Grails 3.x project
 
 #### Example
@@ -39,14 +38,12 @@ On Windows, use backslashes instead
     grails migrate ..\..\grails3\foo
 
 ### Tasks Performed Automatically
-
 The plugin performs the tasks listed in the "Project Structure Changes" section of the [migration guide](https://grails.github.io/grails-doc/latest/guide/upgrading.html).
 After following the instructions above, if the project being migrated is a plugin, steps 1-3 of the [Upgrading Plugins](https://grails.github.io/grails-doc/latest/guide/upgrading.html#upgradingPlugins)
 section will also have been performed. if the project being migrated is an application, steps 1-2 of the 
 [Upgrading Applications](https://grails.github.io/grails-doc/latest/guide/upgrading.html#upgradingApps) section will have been performed.
 
 #### Mandatory Exceptions
- 
 Some of the steps described in the aforementioned sections of the migration guide are not performed by this plugin and must be performed manually instead:
 
 - merging `DataSource.groovy` and `Config.groovy` into a single `application.yml` or `application.groovy` config file with log4j config removed
@@ -55,7 +52,6 @@ Some of the steps described in the aforementioned sections of the migration guid
 - setting the application/plugin version in `build.gradle`
 
 #### Optional Exceptions
- 
 Some of the steps described in the aforementioned sections of the migration guide are not performed by this plugin and may need to be performed manually instead. In other words, dependending of the contents of the project being migrated, each of the following steps may not be relevant
 
 - migrating dependencies from `lib` directory to `build.gradle`
@@ -65,6 +61,8 @@ Some of the steps described in the aforementioned sections of the migration guid
 
 
 #### Gant Scripts
-
 Any Gant scripts in the `scripts` directory of the Grails 2.x project will be copied to the `src/main/scripts` directory of the Grails 3.x project. However the contents of these scripts must be migrated from Gant to Gradle, as described in step 7 of the [plugin migration guide](https://grails.github.io/grails-doc/latest/guide/upgrading.html#upgradingPlugins).
 
+### Improvements
+There are a few additional migration steps that it may be possible to automate, but I need some feedback before I can implement
+them. Check the issue list and contribute feedback/code if you can.
