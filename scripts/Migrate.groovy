@@ -83,7 +83,7 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
     }
 
     // try to copy various files that are reasonably likely to exist in the project root
-    ['README.md', ' LICENSE'].each { String rootFileName ->
+    ['README.md', 'LICENSE'].each { String rootFileName ->
         copyPath(fileCopier, baseDirPath, rootFileName, targetDirPath, rootFileName)
     }
 
@@ -155,8 +155,8 @@ int getPluginClassDefinitionIndex(List<String> lines) {
 void copyPath(Closure copyTask, String sourceBase, String sourceRelative, String targetBase, String targetRelative = '') {
 
     File source = canonicalFile(sourceBase, sourceRelative)
-    if (!source.directory) {
-        console.info "Directory $source not found in Grails 2 project - skipping"
+    if (!source.exists()) {
+        console.info "$source not found in Grails 2 project - skipping"
         return
     }
 
