@@ -33,7 +33,7 @@ on the command-line with the current Grails version set to 2.x and the current d
 
     grails migrate ../../grails3/foo
 
-On Windows, use backslashes instead
+On Windows, it may be necessary to use backslashes instead
 
     grails migrate ..\..\grails3\foo
 
