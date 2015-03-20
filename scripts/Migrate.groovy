@@ -76,6 +76,17 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
         }
     }
 
+    Closure fileCopier = { File source, File target ->
+        FileUtils.deleteQuietly(target)
+        console.info "Copying file $source to $target"
+        FileUtils.copyFile(source, target)
+    }
+
+    // try to copy various files that are reasonably likely to exist in the project root
+    ['README.md', ' LICENSE', '.gitignore'].each { String rootFileName ->
+        copyPath(fileCopier, baseDirPath, rootFileName, targetDirPath, rootFileName)
+    }
+
     // delete config files that are not used in Grails 3
     ['BuildConfig.groovy', 'Config.groovy', 'DataSource.groovy'].each { String configFileName ->
         FileUtils.deleteQuietly(new File(targetConfigDir, configFileName))
