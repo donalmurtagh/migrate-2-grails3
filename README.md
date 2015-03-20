@@ -21,7 +21,9 @@ plugins {
 - Execute the following command in the Grails 2.x project
 
 `grails migrate [path-to-grails3-project]`
-    
+
+- Once this command has completed, you can remove the plugin from the Grails 2.x app
+
 #### Arguments
 
 - `path-to-grails3-project` the *relative* path from the Grails 2.x project to the Grails 3.x project
