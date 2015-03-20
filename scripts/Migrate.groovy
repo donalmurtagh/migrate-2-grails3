@@ -22,32 +22,26 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
         return
     }
 
-    String targetSrcDirPath = canonicalFile(targetDirPath, 'src/main').path
+    File targetGroovySrcDir = canonicalFile(targetDirPath, 'src/main/groovy')
 
-    Closure dirToDirCopier = { File source, File target -> FileUtils.copyDirectoryToDirectory(source, target) }
-    Closure dirCopier = { File source, File target -> FileUtils.copyDirectory(source, target) }
-
-    // copy Groovy source
-    copyDir(dirToDirCopier, grailsSettings.sourceDir.path, 'groovy', targetSrcDirPath)
+    // copy Groovy and Java sources
+    ['java', 'groovy'].each { String srcDirName ->
+        copyDir(grailsSettings.sourceDir.path, srcDirName, targetGroovySrcDir.path)
+    }
 
     // copy grails-app
-    copyDir(dirCopier, baseDirPath, 'grails-app', targetDirPath, 'grails-app')
+    copyDir(baseDirPath, 'grails-app', targetDirPath, 'grails-app')
 
     String sourceTestsBase = grailsSettings.testSourceDir.path
 
-    // copy Java source
-    File targetGroovySrcDir = canonicalFile(targetSrcDirPath, 'groovy')
-    String targetGroovySrcDirPath = targetGroovySrcDir.path
-    copyDir(dirCopier, grailsSettings.sourceDir.path, 'java', targetGroovySrcDirPath)
-
     // copy the tests
-    copyDir(dirCopier, sourceTestsBase, 'unit', targetDirPath, 'src/test/groovy')
-    copyDir(dirCopier, sourceTestsBase, 'integration', targetDirPath, 'src/integration-test/groovy')
-    copyDir(dirCopier, sourceTestsBase, 'functional', targetDirPath, 'src/integration-test/groovy')
+    copyDir(sourceTestsBase, 'unit', targetDirPath, 'src/test/groovy')
+    copyDir(sourceTestsBase, 'integration', targetDirPath, 'src/integration-test/groovy')
+    copyDir(sourceTestsBase, 'functional', targetDirPath, 'src/integration-test/groovy')
 
     // copy web-app and scripts
-    copyDir(dirCopier, baseDirPath, 'web-app', targetDirPath, 'src/main/webapp')
-    copyDir(dirCopier, baseDirPath, 'scripts', targetDirPath, 'src/main/scripts')
+    copyDir(baseDirPath, 'web-app', targetDirPath, 'src/main/webapp')
+    copyDir(baseDirPath, 'scripts', targetDirPath, 'src/main/scripts')
 
     File targetConfigDir = new File(targetDirPath, 'grails-app/conf')
 
@@ -55,17 +49,25 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
     moveFile(targetConfigDir.canonicalPath, 'UrlMappings.groovy', targetDirPath, 'grails-app/controllers/UrlMappings.groovy')
     moveFile(targetConfigDir.canonicalPath, 'BootStrap.groovy', targetDirPath, 'grails-app/init/BootStrap.groovy')
 
-    // delete files included in the copying of grails-app which aren't used in Grails 3
-    ['DataSource.groovy', 'Config.groovy'].each {
-        File configFile = new File(targetConfigDir, it)
-        FileUtils.deleteQuietly(configFile)
+    // delete WEB-INF and META-INF dirs
+    // TODO find out if .tld files in WEB-INF should instead be moved to webapp. See issue #4
+    ['src/main/webapp/WEB-INF', 'src/main/webapp/META-INF'].each { String dirName ->
+        File dir = new File(targetDirPath, dirName)
+        FileUtils.deleteDirectory(dir)
+        console.info "Deleted directory $dir"
     }
 
     // delete filters, these should be replaced by interceptors
     targetConfigDir.eachFileRecurse(FileType.FILES) { File file ->
         if (file.name.endsWith('Filters.groovy')) {
             assert file.delete(), "Failed to delete filter file: $file"
+            console.info "Deleted filter file: $file"
         }
+    }
+
+    // delete config files that are not used in Grails 3
+    ['BuildConfig.groovy', 'Config.groovy', 'DataSource.groovy'].each { String configFileName ->
+        FileUtils.deleteQuietly(new File(targetConfigDir, configFileName))
     }
 
     if (grailsSettings.pluginProject) {
@@ -78,7 +80,7 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
             }
         }
 
-        assert targetPluginDescriptor, "Plugin descriptor not found under $targetGroovySrcDirPath"
+        assert targetPluginDescriptor, "Plugin descriptor not found under $targetGroovySrcDir"
         List<String> targetDescriptorContent = targetPluginDescriptor.readLines()
 
         // complete migration of plugin descriptor by replacing every line after
@@ -91,8 +93,8 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
         int targetClassDefIndex = getPluginClassDefinitionIndex(targetDescriptorContent)
 
         targetPluginDescriptor.withWriter { BufferedWriter writer ->
-            sourceDescriptorContent[sourceClassDefIndex + 1..-1].each { writer.writeLine it }
             targetDescriptorContent[0..targetClassDefIndex].each { writer.writeLine it }
+            sourceDescriptorContent[sourceClassDefIndex + 1..-1].each { writer.writeLine it }
         }
     }
 }
@@ -105,17 +107,17 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
 int getPluginClassDefinitionIndex(List<String> lines) {
 
     // a real programmer would use ANTLR
-    Pattern regex = Pattern.compile(/.*class.*\s+.*[a-zA-Z_$]+GrailsPlugin.*\{.*/)
+    Pattern pluginClassDefRegex = Pattern.compile(/.*class.*\s+.*[a-zA-Z_$]+GrailsPlugin.*\{.*/)
 
     for (int i = 0; i < lines.size(); i++) {
         String line = lines[i]
 
-        if (regex.matcher(line).matches()) {
+        if (pluginClassDefRegex.matcher(line).matches()) {
             return i
         }
     }
 
-    throw new IllegalStateException("Plugin class definition not found in content ${lines.join(System.getProperty('line.separator'))}")
+    assert false, "Plugin class definition not found in content ${lines.join(System.getProperty('line.separator'))}"
 }
 
 /**
@@ -142,14 +144,13 @@ void moveFile(String sourceBase, String sourceRelative, String targetBase, Strin
 
 /**
  * Copies the contents of one directory to another.
- * @param copier performs the copying
  * @param sourceBase the base source dir
  * @param sourceRelative the relative path from sourceBase to the source dir
  * @param targetBase the base target dir
  * @param targetRelative the relative path from targetBase to the target dir. If targetBase
  * is the target dir, this may be omitted
  */
-void copyDir(Closure copier, String sourceBase, String sourceRelative, String targetBase, String targetRelative = '') {
+void copyDir(String sourceBase, String sourceRelative, String targetBase, String targetRelative = '') {
     File source = canonicalFile(sourceBase, sourceRelative)
     if (!source.directory) {
         console.warn "Directory $source not found in Grails 2 project - skipping"
@@ -158,7 +159,7 @@ void copyDir(Closure copier, String sourceBase, String sourceRelative, String ta
 
     File target = canonicalFile(targetBase, targetRelative)
     console.info "Copying contents of $source to $target"
-    copier(source, target)
+    FileUtils.copyDirectory(source, target)
 }
 
 /**
