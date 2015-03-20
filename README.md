@@ -10,16 +10,6 @@ Grails 2.x and 3.x are installed where 2.x is the Grails version of the project 
 - Install this plugin in the Grails 2.x project being migrated, i.e. add the following to `BuildConfig.groovy`
 replacing `${version}` with the latest version of this plugin
 
-#### Example
-If the Grails 2.x being migrated is located at `/home/grails2/foo` and the Grails 3.x project is at `/home/grails3/foo` execute the following
-on the command-line with the current Grails version set to 2.x and the current directory set to `/home/grails2/foo`
-
-    grails migrate ../../grails3/foo
-
-On Windows, use backslashes instead
-
-    grails migrate ..\..\grails3\foo
-
 ````
 plugins {
     build ':migrate2-grails3:${version}'
@@ -36,7 +26,17 @@ plugins {
 
 - `path-to-grails3-project` the *relative* path from the Grails 2.x project to the Grails 3.x project
 
-### Automatic Migration Tasks
+#### Example
+If the Grails 2.x being migrated is located at `/home/grails2/foo` and the Grails 3.x project is at `/home/grails3/foo` execute the following
+on the command-line with the current Grails version set to 2.x and the current directory set to `/home/grails2/foo`
+
+    grails migrate ../../grails3/foo
+
+On Windows, use backslashes instead
+
+    grails migrate ..\..\grails3\foo
+
+### Tasks Performed Automatically
 
 The plugin performs the tasks listed in the "Project Structure Changes" section of the [migration guide](https://grails.github.io/grails-doc/latest/guide/upgrading.html).
 After following the instructions above, if the project being migrated is a plugin, steps 1-3 of the [Upgrading Plugins](https://grails.github.io/grails-doc/latest/guide/upgrading.html#upgradingPlugins)
