@@ -65,4 +65,4 @@ Any Gant scripts in the `scripts` directory of the Grails 2.x project will be co
 
 ### Improvements
 There are a few additional migration steps that it may be possible to automate, but I need some feedback before I can implement
-them. Check the issue list and contribute feedback/code if you can.
+them. Check the [issue list](https://github.com/domurtag/migrate-2-grails3/issues) and contribute feedback/code if you can.
