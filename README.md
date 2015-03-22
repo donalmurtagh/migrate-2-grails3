@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/domurtag/migrate-2-grails3.svg?branch=master)](https://travis-ci.org/domurtag/migrate-2-grails3)
+
 ## migrate-2-grails3
 A Grails 2 plugin that performs a partial migration of a Grails 2 plugin or application to Grails 3
 
