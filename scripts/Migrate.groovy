@@ -104,43 +104,40 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
 
         assert targetPluginDescriptor, "Plugin descriptor not found under $targetGroovySrcDir"
         List<String> targetDescriptorContent = targetPluginDescriptor.readLines()
-
-        // complete migration of plugin descriptor by replacing every line after
-        // class ExampleGrailsPlugin extends Plugin {
-        // in the target plugin descriptor with every line after
-        // class ExamplePlugin {
-        // in the source plugin descriptor
         List<String> sourceDescriptorContent = grailsSettings.basePluginDescriptor.readLines()
-        int sourceClassDefIndex = getPluginClassDefinitionIndex(sourceDescriptorContent)
-        int targetClassDefIndex = getPluginClassDefinitionIndex(targetDescriptorContent)
+
+        // add a package declaration, blank line, an import statement, and another blank line to the Grails 2 plugin descriptor
+        String targetPackageStatement = targetDescriptorContent.find { it ==~ /\s*package\s+[a-zA-Z_$\.]+\s*/ }
+        assert targetPackageStatement, "No package statement found in plugin descriptor $targetPluginDescriptor"
+        sourceDescriptorContent.addAll(0, [targetPackageStatement, '', 'import grails.plugins.*',  ''])
+
+        // replace the Grails 2.x plugin class definition, e.g.
+        //      class MyGrailsPlugin {
+
+        // with a Grails 3.x plugin class definition, e.g.
+        //      class MyGrailsPlugin extends grails.plugins.Plugin {
+        Pattern pluginClassDefRegex = Pattern.compile(/.*class.*\s+.*[a-zA-Z_$]+GrailsPlugin.*/)
+
+        String grails3PluginClassName = targetPluginDescriptor.name - '.groovy'
+        String grails3PluginClassDef = "$grails3PluginClassName extends Plugin"
+        boolean pluginClassDeclarationMigrated = false
+
+        for (int i = 0; i < sourceDescriptorContent.size(); i++) {
+            String line = sourceDescriptorContent[i]
+
+            if (pluginClassDefRegex.matcher(line).matches()) {
+                sourceDescriptorContent[i] = line.replaceFirst(/[a-zA-Z_$]+GrailsPlugin/, grails3PluginClassDef)
+                pluginClassDeclarationMigrated = true
+                break
+            }
+        }
+
+        assert pluginClassDeclarationMigrated, "Plugin class declaration not found in $grailsSettings.basePluginDescriptor"
 
         targetPluginDescriptor.withWriter { BufferedWriter writer ->
-            targetDescriptorContent[0..targetClassDefIndex].each { writer.writeLine it }
-            sourceDescriptorContent[sourceClassDefIndex + 1..-1].each { writer.writeLine it }
+            sourceDescriptorContent.each { writer.writeLine it }
         }
     }
-}
-
-/**
- * Find the line number that contains the plugin class definition.
- * @param lines the plugin class content
- * @return the index
- */
-int getPluginClassDefinitionIndex(List<String> lines) {
-
-    // a real programmer would use ANTLR
-    Pattern pluginClassDefRegex = Pattern.compile(/.*class.*\s+.*[a-zA-Z_$]+GrailsPlugin.*\{.*/)
-
-    for (int lineNumber = 0; lineNumber < lines.size(); lineNumber++) {
-        String line = lines[lineNumber]
-
-        if (pluginClassDefRegex.matcher(line).matches()) {
-            return lineNumber
-        }
-    }
-
-    String lineBreak = System.getProperty('line.separator')
-    assert false, "Plugin class definition not found in content ${lines.join(lineBreak)}"
 }
 
 /**
