@@ -116,28 +116,38 @@ target(migrate: "Migrates a Grails 2.X app or plugin to Grails 3") {
 
         // with a Grails 3.x plugin class definition, e.g.
         //      class MyGrailsPlugin extends grails.plugins.Plugin {
-        Pattern pluginClassDefRegex = Pattern.compile(/.*class.*\s+.*[a-zA-Z_$]+GrailsPlugin.*/)
-
         String grails3PluginClassName = targetPluginDescriptor.name - '.groovy'
         String grails3PluginClassDef = "$grails3PluginClassName extends Plugin"
-        boolean pluginClassDeclarationMigrated = false
 
-        for (int i = 0; i < sourceDescriptorContent.size(); i++) {
-            String line = sourceDescriptorContent[i]
-
-            if (pluginClassDefRegex.matcher(line).matches()) {
-                sourceDescriptorContent[i] = line.replaceFirst(/[a-zA-Z_$]+GrailsPlugin/, grails3PluginClassDef)
-                pluginClassDeclarationMigrated = true
-                break
-            }
-        }
-
-        assert pluginClassDeclarationMigrated, "Plugin class declaration not found in $grailsSettings.basePluginDescriptor"
+        def (int pluginClassDefLineIndex, String grails2PluginClassDefLine) = getFirstMatchingLine(sourceDescriptorContent, /.*class.*\s+.*[a-zA-Z_$]+GrailsPlugin.*/)
+        String grails3PluginClassDefLine = grails2PluginClassDefLine.replaceFirst(/[a-zA-Z_$]+GrailsPlugin/, grails3PluginClassDef)
+        sourceDescriptorContent[pluginClassDefLineIndex] = grails3PluginClassDefLine
 
         targetPluginDescriptor.withWriter { BufferedWriter writer ->
             sourceDescriptorContent.each { writer.writeLine it }
         }
     }
+}
+
+/**
+ * Get the the first line that matches a regex
+ * @param line
+ * @param regex
+ * @return the index of the matching line and the line itself
+ */
+def getFirstMatchingLine(List<String> lines, String regex) {
+    Pattern pattern = Pattern.compile(regex)
+
+    for (int i = 0; i < lines.size(); i++) {
+        String line = lines[i]
+
+        if (pattern.matcher(line).matches()) {
+            return [i, line]
+        }
+    }
+
+    String lineBreak = System.properties['line.separator']
+    assert false, "A line matching '$regex' was not found in ${lines.join(lineBreak)}"
 }
 
 /**
