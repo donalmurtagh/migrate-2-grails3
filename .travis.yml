@@ -1,7 +1,8 @@
 language: groovy
 
 jdk:
-- openjdk7
+- openjdk8
+
 
 env:
 - GRAILS_VERSION=2.4.4
